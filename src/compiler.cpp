@@ -49,16 +49,24 @@ int compile_to_cpp(std::string filename) {
     for (std::string content : file_contents) {
         if (content.find("print/") == 0) {
             content.erase(0, 6);
-            cpp_file << "std::cout << " << content << ";\n";
+            cpp_file << "std::cout << \"" << content << "\";\n";
         } else if (content.find("int/") == 0 ) {
             content.erase(0, 4);
             size_t slash = content.find('/');
             if (slash != std::string::npos) {
                 std::string int_name = content.substr(0, slash);
                 std::string int_val = content.substr(slash + 1);
-                cpp_file << "int " << int_name << " = "<< int_val << ";\n";
+                cpp_file << "int " << int_name << " = " << int_val << ";\n";
             }
             
+        } else if (content.find("bol/") == 0) {
+            content.erase(0, 4);
+            size_t slash = content.find('/');
+            if (slash != std::string::npos) {
+                std::string bol_name = content.substr(0, slash);
+                std::string bol_val = content.substr(slash + 1);
+                cpp_file << "bool " << bol_name << " = " << bol_val << ";\n";
+            }
         }
     }
     cpp_file << "return 0;\n}\n";

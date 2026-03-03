@@ -65,6 +65,11 @@ int compile_to_cpp(std::string filename) {
             if (slash != std::string::npos) {
                 std::string bol_name = content.substr(0, slash);
                 std::string bol_val = content.substr(slash + 1);
+                if (bol_val != "true" and bol_val != "false") {
+                    std::cerr << "booleans can only be true or false!\nexpected: true / false\ngot: " << bol_val << "\nfor " << bol_name << std::endl;
+                    throw 500;
+                    return 1;
+                }
                 cpp_file << "bool " << bol_name << " = " << bol_val << ";\n";
             }
         } else if (content.find("str/") == 0) {

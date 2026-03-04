@@ -3,12 +3,17 @@
 #include<filesystem>
 #include<vector>
 #include<string>
+#include<algorithm>
 
 std::string filename;
 std::filesystem::path tmp_dir = "/tmp/bread/";
 std::filesystem::path cpp_dir = "/tmp/bread/temp.cpp";
 std::string cppname;
 std::vector<std::string> file_contents;
+std::vector<std::string> integer_names;
+std::vector<std::string> string_names;
+std::vector<std::string> bool_names;
+
 
 int compiler; // 1 = gcc, 2 = clang, if both, clang will be preferred due to faster compile time
 
@@ -20,13 +25,26 @@ int create_tmp_dir_if_not_exist() {
         }
     } catch (const std::filesystem::filesystem_error &e) {
         std::cout << "could not create tmp directory, " << e.what() << std::endl;
+        throw 500;
         return 1;
     }
     return 0;
 }
 
 int compile_cpp(std::string filepath) {
-
+    size_t prefix = filename.find(".bread");
+    std::string new_filename = filename.substr(0, prefix);
+    std::string clang = "clang++ " + filepath + " -o " + new_filename;
+    std::string gcc = "g++ " + filepath + " -o " + new_filename;
+    std::string copy_path = "cp " + std::string(tmp_dir) + new_filename + " .";
+    std::cout << "beginning build..." << std::endl;
+    if (compiler == 1) {
+        std::system(gcc.c_str());
+    } else if (compiler == 2) {
+        std::system(clang.c_str());
+    }
+    std::cout << "build complete" << std::endl;
+    return 0;
 }
 
 int compile_to_cpp(std::string filename) {
@@ -59,7 +77,15 @@ int compile_to_cpp(std::string filename) {
     for (std::string content : file_contents) {
         if (content.find("print/") == 0) {
             content.erase(0, 6);
-            cpp_file << "std::cout << \"" << content << "\";\n";
+            auto string_it = std::find(string_names.begin(), string_names.end(), content);
+            auto int_it = std::find(integer_names.begin(), integer_names.end(), content);
+            auto bool_it = std::find(bool_names.begin(), bool_names.end(), content);
+            if (string_it != string_names.end() or int_it != integer_names.end() or bool_it != bool_names.end()) {
+                cpp_file << "std::cout << " + content << " << std::endl;\n";
+            } else {
+                cpp_file << "std::cout << \"" << content << "\" << std::endl;\n";
+            }
+            
         } else if (content.find("int/") == 0 ) {
             content.erase(0, 4);
             size_t slash = content.find('/');
@@ -67,6 +93,7 @@ int compile_to_cpp(std::string filename) {
                 std::string int_name = content.substr(0, slash);
                 std::string int_val = content.substr(slash + 1);
                 cpp_file << "int " << int_name << " = " << int_val << ";\n";
+                integer_names.push_back(int_name);
             }
             
         } else if (content.find("bol/") == 0) {
@@ -81,6 +108,7 @@ int compile_to_cpp(std::string filename) {
                     return 1;
                 }
                 cpp_file << "bool " << bol_name << " = " << bol_val << ";\n";
+                bool_names.push_back(bol_name);
             }
         } else if (content.find("str/") == 0) {
             content.erase(0, 4);
@@ -88,12 +116,22 @@ int compile_to_cpp(std::string filename) {
             if (slash != std::string::npos) {
                 std::string str_name = content.substr(0, slash);
                 std::string str_val = content.substr(slash + 1);
-                cpp_file << "std::string " << str_val << " = \"" << str_val << "\";\n";
+                cpp_file << "std::string " << str_name << " = \"" << str_val << "\";\n";
+                string_names.push_back(str_name);
             }
+        } else if (content.find("in/") == 0) {
+            content.erase(0, 3);
+            auto it = std::find(string_names.begin(), string_names.end(), content);
+            if (it == string_names.end()) {
+                cpp_file << "std::string " << content << ";\n";
+                string_names.push_back(content);
+            }
+            cpp_file << "std::cin >> " << content << ";\n";
         }
     }
     cpp_file << "return 0;\n}\n";
     cpp_file.close();
+    compile_cpp(cpp_dir);
     return 0;
 }
 
@@ -104,14 +142,14 @@ int find_compiler() {
     std::string clang = "clang++ -v > /dev/null 2>&1";
     int gcc_result = std::system(gcc.c_str());
     int clang_result = std::system(clang.c_str());
-    if (gcc_result == 0) {
+    if (clang_result == 0 && gcc_result == 0) {
+        std::cout << "2 compilers found, clang will be preferred" << std::endl;
+        compiler = 2;
+    } else if (gcc_result == 0) {
         std::cout << "gcc found" << std::endl;
         compiler = 1;
     } else if (clang_result == 0) {
         std::cout << "clang found" << std::endl;
-        compiler = 2;
-    } else if (clang_result == 0 && gcc_result == 0) {
-        std::cout << "2 compilers found, clang will be preferred" << std::endl;
         compiler = 2;
     } else {
         std::cerr << "no compilers found, please install gcc or clang" << std::endl;
@@ -133,7 +171,11 @@ int main(int argc, char *argv[]) {
     } catch (int e) {
         return 1;
     }
-    create_tmp_dir_if_not_exist();
+    try {
+        create_tmp_dir_if_not_exist();
+    } catch (int e) {
+        return 1;
+    }
     try {
         compile_to_cpp(filename);
     } catch (int ercode) {

@@ -47,7 +47,14 @@ int compile_cpp(std::string filepath) {
     return 0;
 }
 
-
+void trimwhtspc(std::string &string) {
+    string.erase(string.begin(), std::find_if(string.begin(), string.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+    string.erase(std::find_if(string.rbegin(), string.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), string.end());
+}
 
 int compile_to_cpp(std::string filename) {
     std::ifstream breadfile;
@@ -77,6 +84,7 @@ int compile_to_cpp(std::string filename) {
     //} todo: shortcuts
     cpp_file << "#include<iostream>\nint main() {\n";
     for (std::string content : file_contents) {
+        trimwhtspc(content); // needed if the user uses tabs
         if (content.find("print/") == 0) {
             content.erase(0, 6);
             auto string_it = std::find(string_names.begin(), string_names.end(), content);
@@ -144,7 +152,26 @@ int compile_to_cpp(std::string filename) {
                     return 1;
             }
             cpp_file << "return " << content << ";\n";
-
+        } else if (content.find("if/") == 0) {
+            content.erase(0, 3);
+            size_t slash1 = content.find('/');
+            size_t slash2 = content.find('/', slash1 + 1);
+            std::string variable1 = content.substr(0, slash1);
+            std::string condition = content.substr(slash1 + 1, slash2 - slash1 - 1);
+            std::string variable2 = content.substr(slash2 + 1);
+            if (condition != "equals" && condition != "notequals") {
+                std::cerr << "an if condition can only take equals or notequals as operators!" << std::endl;
+                throw 500;
+                return 1;
+            }
+            if (condition == "equals") {
+                condition = "==";
+            } else if (condition == "notequals") {
+                condition = "!=";
+            }
+            cpp_file << "if (" << variable1 << " "<< condition << " " << variable2 << ") {\n";
+        } else if (content.find("endif/") == 0) {
+            cpp_file << "}\n";
         }
     }
     cpp_file << "return 0;\n}\n";

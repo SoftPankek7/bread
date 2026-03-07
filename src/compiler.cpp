@@ -82,7 +82,7 @@ int compile_to_cpp(std::string filename) {
     //        content.erase(0,7);
     //    }
     //} todo: shortcuts
-    cpp_file << "#include<iostream>\nint main() {\n";
+    cpp_file << "#include<iostream>\n#include<chrono>\n#include<thread>\nint main() {\n";
     for (std::string content : file_contents) {
         trimwhtspc(content); // needed if the user uses tabs
         if (content.empty()) { // checks if the line is empty, do not delete this function
@@ -378,6 +378,27 @@ int compile_to_cpp(std::string filename) {
                     cpp_file << variable1 << " /= " << variable2 << ";\n";
                 }
             }
+        } else if (content.find('wait/')) {
+            content.erase(0, 5);
+            if (content == "") {
+                std::cerr << "wait function needs how many seconds to wait!" << std::endl;
+                throw 500;
+                return 1;
+            }
+            auto int_it = std::find(integer_names.begin(), integer_names.end(), content);
+            if (int_it == integer_names.end()) {
+                int is_int = all_of(content.begin(), content.end(), ::isdigit);
+                if (!is_int) {
+                    std::cerr << "wait only takes numbers or integers as its parameter!" << std::endl;
+                    throw 500;
+                    return 1;
+                } else {
+                    cpp_file << "std::this_thread::sleep_for(std::chrono::seconds(" << content << "));\n";
+                }
+            } else {
+                cpp_file << "std::this_thread::sleep_for(std::chrono::seconds(" << content << "));\n";
+            }
+            
         } else {
             std::cerr << "invalid command: " << content << std::endl;
             throw 500;

@@ -46,6 +46,9 @@ There are 4 basic maths functions, which are:
 These are only just examples, but the numbers can be replaced with an integer.
 
 
+## Other functions
+- `wait/5` - Stop the program for X second (5 for example)
+
 ## Functions?
 ## SHORTCUTS TO BE IMPLEMENTED SOON!
 In bread, functions are shortcuts.

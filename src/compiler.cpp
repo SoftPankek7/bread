@@ -85,6 +85,9 @@ int compile_to_cpp(std::string filename) {
     cpp_file << "#include<iostream>\nint main() {\n";
     for (std::string content : file_contents) {
         trimwhtspc(content); // needed if the user uses tabs
+        if (content.empty()) { // checks if the line is empty, do not delete this function
+            continue;
+        }
         if (content.find("print/") == 0) {
             content.erase(0, 6);
             auto string_it = std::find(string_names.begin(), string_names.end(), content);
@@ -235,6 +238,10 @@ int compile_to_cpp(std::string filename) {
             }   
         } else if (content.find("endwhile/") == 0) {
             cpp_file << "}\n";
+        } else {
+            std::cerr << "invalid command: " << content << std::endl;
+            throw 500;
+            return 1;
         }
     }
     cpp_file << "return 0;\n}\n";

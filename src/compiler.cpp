@@ -378,7 +378,7 @@ int compile_to_cpp(std::string filename) {
                     cpp_file << variable1 << " /= " << variable2 << ";\n";
                 }
             }
-        } else if (content.find('wait/')) {
+        } else if (content.find("wait/") == 0) {
             content.erase(0, 5);
             if (content == "") {
                 std::cerr << "wait function needs how many seconds to wait!" << std::endl;

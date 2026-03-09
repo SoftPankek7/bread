@@ -378,6 +378,44 @@ int compile_to_cpp(std::string filename) {
                     cpp_file << variable1 << " /= " << variable2 << ";\n";
                 }
             }
+        } else if (content.find("mod/") == 0) {
+            content.erase(0, 4);
+            size_t slash1 = content.find('/');
+            if (slash1 == std::string::npos) {
+                std::cerr << "mod missing a slash!" << std::endl;
+                throw 500;
+                return 1;
+            }
+            std::string variable1 = content.substr(0, slash1);
+            std::string variable2 = content.substr(slash1 + 1);
+            if (variable2.empty()) {
+                std::cerr << "cannot mod by nothing!" << std::endl;
+                throw 500;
+                return 1;
+            } else if (variable2 == "0") {
+                std::cerr << "cannot mod by zero!" << std::endl;
+                throw 500;
+                return 1;
+            }
+            auto int_it = std::find(integer_names.begin(), integer_names.end(), variable1);
+            if (int_it == integer_names.end()) {
+                std::cerr << "integer " << variable1 << " not found." << std::endl;
+                throw 500;
+                return 1;
+            }
+            auto int2_it = std::find(integer_names.begin(), integer_names.end(), variable2);
+            if (int2_it != integer_names.end()) {
+                cpp_file << variable1 << " %= " << variable2 << ";\n";
+            } else {
+                int is_int = all_of(variable2.begin(), variable2.end(), ::isdigit);
+                if (!is_int) {
+                    std::cerr << "only numbers can mod an integer!" << std::endl;
+                    throw 500;
+                    return 1;
+                } else {
+                    cpp_file << variable1 << " %= " << variable2 << ";\n";
+                }
+            }
         } else if (content.find("wait/") == 0) {
             content.erase(0, 5);
             if (content == "") {

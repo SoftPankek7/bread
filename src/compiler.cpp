@@ -5,6 +5,8 @@
 #include<string>
 #include<algorithm>
 
+#include "compiler.hpp"
+
 std::string filename;
 std::filesystem::path tmp_dir = "/tmp/bread/";
 std::filesystem::path cpp_dir = "/tmp/bread/temp.cpp";

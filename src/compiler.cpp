@@ -16,6 +16,7 @@ std::vector<std::string> integer_names;
 std::vector<std::string> string_names;
 std::vector<std::string> bool_names;
 std::vector<std::string> shortcut_names;
+std::string version = "Bread 0.1 fs branch";
 
 int compiler; // 1 = gcc, 2 = clang, if both, clang will be preferred due to faster compile time
 int line_count;
@@ -34,12 +35,14 @@ int create_tmp_dir_if_not_exist() {
     return 0;
 }
 
-int compile_cpp(std::string filepath) {
+int compile_cpp(std::string filepath, int copy) {
     size_t prefix = filename.find(".bread");
     std::string new_filename = filename.substr(0, prefix);
     std::string clang = "clang++ " + filepath + " -o " + new_filename;
     std::string gcc = "g++ " + filepath + " -o " + new_filename;
-    std::string copy_path = "cp " + std::string(tmp_dir) + new_filename + " .";
+    if (copy == 1) {
+        std::string copy_path = "cp " + std::string(tmp_dir) + new_filename + " .";
+    }
     std::cout << "beginning build..." << std::endl;
     if (compiler == 1) {
         std::system(gcc.c_str());
@@ -84,7 +87,7 @@ int compile_to_cpp(std::string filename) {
         return 1;
     }
     line_count = 0;
-    cpp_file_raw << "#include<iostream>\n#include<chrono>\n#include<thread>\n#include<filesystem>\n";
+    cpp_file_raw << "#include<iostream>\n#include<chrono>\n#include<thread>\n#include<filesystem>\nstd::string version = \"" << version << "\";\n";
     *curr_out << "int main() {\n";
     for (std::string content : file_contents) {
         line_count += 1; // used for showing where errors are
@@ -462,11 +465,30 @@ int compile_to_cpp(std::string filename) {
             curr_out = &cpp_file;
         } else if (content.find("createdir/") == 0) {
             content.erase(0, 10);
-            size_t slash = content.find("/");
-            if (slash == std::string::npos) {
-                std::cerr << "no slash found in createdir/ command! on line: " << line_count << std::endl;
+            if (content == "") {
+                std::cerr << "path must be given to directory! on line: " << line_count << std::endl;
+            }
+            auto it = std::find(string_names.begin(), string_names.end(), content);
+            if (it == string_names.end()) {
+                std::cerr << "string " << content << " not found! on line: " << line_count << std::endl;
                 throw 500;
                 return 1;
+            } else {
+                *curr_out << "try {\nstd::filesystem::create_directories(" << content << ");\n} catch (const fs::filesystem_error& e) {\nstd::cerr << \"Runtime Error!!! fs error at path: \" << e.path1().string();\nstd::cerr << \"Message: \" << e.code().message();\nstd::cerr << \"compiled with \" << version << \"\n\";\nreturn 1;\n";
+            }
+
+        } else if (content.find("deletedir/") == 0) {
+            content.erase(0, 10);
+            if (content == "") {
+                std::cerr << "path must be given to directory! on line: " << line_count << std::endl;
+            }
+            auto it = std::find(string_names.begin(), string_names.end(), content);
+            if (it == string_names.end()) {
+                std::cerr << "string " << content << " not found! on line: " << line_count << std::endl;
+                throw 500;
+                return 1;
+            } else {
+                *curr_out << "std::filesystem::remove(" << content << ");\n";
             }
 
         } else {
@@ -484,7 +506,7 @@ int compile_to_cpp(std::string filename) {
     cpp_file_raw << func_stream.str();
     cpp_file_raw << cpp_file.str();
     cpp_file_raw.close();
-    compile_cpp(cpp_dir);
+    compile_cpp(cpp_dir, 1);
     return 0;
 }
 

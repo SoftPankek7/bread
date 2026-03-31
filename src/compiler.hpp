@@ -18,6 +18,8 @@ extern int compiler;
 
 extern int line_count;
 
+extern std::string version;
+
 int create_tmp_dir_if_not_exist();
 int compile_cpp(std::string filepath);
 void trimwhtspc(std::string &string);

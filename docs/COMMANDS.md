@@ -48,11 +48,11 @@ Other maths functions:
 - `mod/foo/4` - Modulo. Example: Mod foo by 4
 
 ## Filesystem
-
-- `createdir/foo/path` - Creates a directory called foo at a string called path. The path must be already defined with a string
-- `deletedir/foo/path` - Deletes a directory called foo in a folder called path. The path must be already defined with a string
-- `createfile/foo/path` - Creates a file called foo in a folder called path. The path must be already defined with a string
-- `deletefile/foo/path` - Deletes a file called foo in a folder called path. The path must be already defined with a string
+The variable name "path" is just an example here.
+- `createdir/path` - Creates a directory at a string called path. The path must be already defined with a string
+- `deletedir/path` - Deletes a directory at a string called path. The path must be already defined with a string
+- `createfile/path` - Creates a file at a string called path. The path must be already defined with a string
+- `deletefile/path` - Deletes a file at a string called path called path. The path must be already defined with a string
 
 ## Other functions
 - `wait/5` - Stop the program for X second (5 for example)
